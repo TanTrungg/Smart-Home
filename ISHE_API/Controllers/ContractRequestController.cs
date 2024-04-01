@@ -33,7 +33,7 @@ namespace ISHE_API.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(ContractModificationViewModel), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status400BadRequest)]
-        [SwaggerOperation(Summary = "Create survey.")]
+        [SwaggerOperation(Summary = "Create contract modify.")]
         public async Task<ActionResult<ContractModificationViewModel>> CreateSurvey([FromBody][Required] CreateContractModificationModel model)
         {
             var survey = await _modificationService.CreateContractModification(model);
@@ -45,7 +45,7 @@ namespace ISHE_API.Controllers
         //[Authorize(AccountRole.Teller)]
         [ProducesResponseType(typeof(ContractModificationViewModel), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status400BadRequest)]
-        [SwaggerOperation(Summary = "Update survey.")]
+        [SwaggerOperation(Summary = "Update contract modify.")]
         public async Task<ActionResult<ContractModificationViewModel>> UpdateSurvey([FromRoute] Guid id, [FromBody] UpdateContractModificationModel model)
         {
             var survey = await _modificationService.UpdateContractModification(id, model);
