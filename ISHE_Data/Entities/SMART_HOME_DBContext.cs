@@ -45,7 +45,7 @@ namespace ISHE_Data.Entities
             if (!optionsBuilder.IsConfigured)
             {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-//                optionsBuilder.UseSqlServer("Server=TAN-TRUNG\\HAMMER;Database=SMART_HOME_DB;Persist Security Info=False;User ID=sa;Password=123456;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;");
+                //optionsBuilder.UseSqlServer("Server=TAN-TRUNG\\HAMMER;Database=SMART_HOME_DB;Persist Security Info=False;User ID=sa;Password=123456;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;");
             }
         }
 
@@ -381,7 +381,11 @@ namespace ISHE_Data.Entities
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(dateadd(hour,(7),getutcdate()))");
 
+                entity.Property(e => e.Image).IsUnicode(false);
+
                 entity.Property(e => e.Name).HasMaxLength(255);
+
+                entity.Property(e => e.Origin).HasMaxLength(255);
             });
 
             modelBuilder.Entity<Notification>(entity =>

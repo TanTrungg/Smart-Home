@@ -67,7 +67,7 @@ namespace ISHE_API.Controllers
 
         [HttpPut]
         [Route("avatar")]
-        [Authorize(AccountRole.Staff)]
+        [Authorize(AccountRole.Teller)]
         [ProducesResponseType(typeof(TellerViewModel), StatusCodes.Status201Created)]
         [SwaggerOperation(Summary = "Upload avatar for teller.")]
         public async Task<ActionResult<TellerViewModel>> UploadAvatar([Required] IFormFile image)

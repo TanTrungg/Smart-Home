@@ -2,6 +2,7 @@
 using ISHE_Data.Models.Internal;
 using ISHE_Data.Models.Requests.Filters;
 using ISHE_Data.Models.Requests.Post;
+using ISHE_Data.Models.Requests.Put;
 using ISHE_Data.Models.Views;
 using ISHE_Service.Interfaces;
 using ISHE_Utility.Constants;
@@ -45,7 +46,7 @@ namespace ISHE_API.Controllers
         [ProducesResponseType(typeof(ManufacturerViewModel), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status409Conflict)]
         [SwaggerOperation(Summary = "Create manufacturer.")]
-        public async Task<ActionResult<ManufacturerViewModel>> CreateManufacturer([FromBody][Required] CreateManufacturerModel model)
+        public async Task<ActionResult<ManufacturerViewModel>> CreateManufacturer([FromForm][Required] CreateManufacturerModel model)
         {
             var manufacturer = await _manufacturerService.CreateManufacturer(model);
             return CreatedAtAction(nameof(GetManufacturer), new { id = manufacturer.Id }, manufacturer);
@@ -57,7 +58,7 @@ namespace ISHE_API.Controllers
         [ProducesResponseType(typeof(ManufacturerViewModel), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Update manufacturer.")]
-        public async Task<ActionResult<ManufacturerViewModel>> UpdateManufacturer([FromRoute] Guid id, [FromBody] CreateManufacturerModel model)
+        public async Task<ActionResult<ManufacturerViewModel>> UpdateManufacturer([FromRoute] Guid id, [FromForm] UpdateManufacturerModel model)
         {
             var manufacturer = await _manufacturerService.UpdateManufacturer(id, model);
             return CreatedAtAction(nameof(GetManufacturer), new { id = manufacturer.Id }, manufacturer);

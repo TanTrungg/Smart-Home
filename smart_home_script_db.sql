@@ -126,6 +126,13 @@ CREATE TABLE Manufacturer(
 );
 GO
 
+--update
+ALTER TABLE Manufacturer
+ADD Image varchar(MAX),
+    Origin NVARCHAR(255),
+    Description NVARCHAR(MAX);
+
+GO
 --Table Promotion
 DROP TABLE IF EXISTS Promotion;
 GO
