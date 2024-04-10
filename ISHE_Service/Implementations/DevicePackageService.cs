@@ -25,6 +25,7 @@ namespace ISHE_Service.Implementations
         private readonly IPromotionRepository _promotionRepository;
         private readonly IImageRepository _imageRepository;
         private readonly ISmartDevicePackageRepository _smartDevicePackage;
+        private readonly IDevicePackageUsageRepository _devicePackageUsageRepository;
 
         private readonly ICloudStorageService _cloudStorageService;
 
@@ -36,8 +37,37 @@ namespace ISHE_Service.Implementations
             _promotionRepository = unitOfWork.Promotion;
             _imageRepository = unitOfWork.Image;
             _smartDevicePackage = unitOfWork.SmartDevicePackage;
+            _devicePackageUsageRepository = unitOfWork.DevicePackageUsage;
 
             _cloudStorageService = cloudStorageService;
+        }
+
+        public async Task<List<MostDevicePackageViewModel>> GetMostDevicePackages()
+        {
+            var mostDevicePackage = await _devicePackageUsageRepository.GetAll()
+                .GroupBy(package => package.DevicePackageId)
+                .Select(package => new
+                {
+                    DevicePakageId = package.Key,
+                    TotalSold = package.Count()
+                })
+                .OrderByDescending(package => package.TotalSold)
+                .Take(10).
+                ToListAsync();
+
+            var result = new List<MostDevicePackageViewModel>();
+            foreach(var package in mostDevicePackage)
+            {
+                var pac = await _packageRepository.GetMany(p => p.Id == package.DevicePakageId)
+                    .ProjectTo<DevicePackageViewModel>(_mapper.ConfigurationProvider)
+                    .FirstOrDefaultAsync();
+                result.Add(new MostDevicePackageViewModel
+                {
+                    TotalSold = package.TotalSold,
+                    DevicePackage = pac!
+                });
+            }
+            return result;
         }
 
         public async Task<ListViewModel<DevicePackageViewModel>> GetDevicePackages(DevicePackageFilterModel filter, PaginationRequestModel pagination)

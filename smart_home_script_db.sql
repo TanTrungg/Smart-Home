@@ -133,6 +133,8 @@ ADD Image varchar(MAX),
     Description NVARCHAR(MAX);
 
 GO
+
+
 --Table Promotion
 DROP TABLE IF EXISTS Promotion;
 GO

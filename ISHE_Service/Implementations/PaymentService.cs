@@ -182,14 +182,13 @@ namespace ISHE_Service.Implementations
             return result;
         }
 
-        public async Task<List<PaymentViewModel>> GetRevenues(int? year)
+        public async Task<List<PaymentViewModel>> GetRevenues(int? month)
         {
-            var query = _payment.GetAll();
+            var query = _payment.GetMany(re => re.Status == PaymentStatus.Successful.ToString());
 
-            if (year.HasValue)
+            if (month.HasValue)
             {
-                query = query.Where(re => re.CreateAt.Year == year.Value
-                                            && re.Status == PaymentStatus.Successful.ToString());
+                query = query.Where(re => re.CreateAt.Month == month.Value);
             }
 
             return await query
