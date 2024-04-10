@@ -378,7 +378,7 @@ namespace ISHE_Service.Implementations
                 var discountAmount = package.Promotion?.DiscountAmount;
                 if (discountAmount.HasValue)
                 {
-                    totalAmount *= (100 - discountAmount.Value) / 100;
+                    totalAmount -= totalAmount * discountAmount.Value / 100;
                 }
 
                 totalMonthToCompleted += package.CompletionTime;
