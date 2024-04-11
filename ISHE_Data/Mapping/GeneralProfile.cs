@@ -39,6 +39,7 @@ namespace ISHE_Data.Mapping
 
             CreateMap<StaffAccount, StaffGroupViewModel>()
                 .ForMember(dest => dest.LeadAccountId, opt => opt.MapFrom(src => src.AccountId))
+                .ForMember(dest => dest.LeadPhoneNumber, opt => opt.MapFrom(src => src.Account.PhoneNumber))
                 .ForMember(dest => dest.LeadFullName, opt => opt.MapFrom(src => src.FullName))
                 .ForMember(dest => dest.LeadEmail, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.LeadAvatar, opt => opt.MapFrom(src => src.Avatar))
