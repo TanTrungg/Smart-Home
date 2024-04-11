@@ -122,10 +122,10 @@ namespace ISHE_Service.Implementations
                     var customer = await GetCustomer(model.SurveyId);
                     contractId = GenerateContractId();
                     var priceOfDevice = await CreateContractDetail(contractId, model.ContractDetails, false);
-                    var (priceOfPackage, totalMonth) = await CreateDevicePackageUsage(contractId, model.DevicePackages, false);
+                    var (priceOfPackage, totalDay) = await CreateDevicePackageUsage(contractId, model.DevicePackages, false);
 
                     var startPlanDate = CheckFormatDate(model.StartPlanDate.ToString());
-                    var endPlanDate = startPlanDate.AddMonths(totalMonth);
+                    var endPlanDate = startPlanDate.AddDays(totalDay);
                     await CheckStaff(model.StaffId, startPlanDate, endPlanDate);
 
                     var contract = new Contract
@@ -269,11 +269,12 @@ namespace ISHE_Service.Implementations
             }
 
             var overlappingContracts = await _contract.GetMany(c => c.StaffId == staffId &&
-                                                    c.StartPlanDate <= endDate && c.EndPlanDate >= startDate)
+                                                    c.StartPlanDate.Date <= endDate.Date && c.EndPlanDate.Date >= startDate.Date
+                                                    && (c.Status !=ContractStatus.Completed.ToString() && c.Status != ContractStatus.Cancelled.ToString()))
                                                         .ToListAsync();
             if (overlappingContracts.Any())
             {
-                throw new BadRequestException("Staff đã được giao hợp đồng trong khoảng thời gian này");
+                throw new BadRequestException($"Staff đã được giao hợp đồng trong khoảng thời gian {startDate.ToString("dd/MM/yyyy")} - {endDate.ToString("dd/MM/yyyy")} này");
             }
         }
 
@@ -353,7 +354,7 @@ namespace ISHE_Service.Implementations
         private async Task<(int, int)> CreateDevicePackageUsage(string contractId, List<Guid> devicePackageIds, bool IsUpdate)
         {
             var totalAmount = 0;
-            var totalMonthToCompleted = 0;
+            var totalDayToCompleted = 0;
 
             if (IsUpdate)
             {
@@ -381,7 +382,7 @@ namespace ISHE_Service.Implementations
                     totalAmount -= totalAmount * discountAmount.Value / 100;
                 }
 
-                totalMonthToCompleted += package.CompletionTime;
+                totalDayToCompleted += package.CompletionTime;
 
                 var devicePackageUsage = new DevicePackageUsage
                 {
@@ -412,7 +413,7 @@ namespace ISHE_Service.Implementations
                 }
             }
 
-            return (totalAmount, totalMonthToCompleted);
+            return (totalAmount, totalDayToCompleted);
         }
 
         private void UpdateContractStatus(Contract contract, string newStatus)
