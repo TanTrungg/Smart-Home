@@ -439,15 +439,24 @@ namespace ISHE_Service.Implementations
                     {
                         contract.Status = ContractStatus.Cancelled.ToString();
                     }
-                    contract.Status = newStatus;
+                    else
+                    {
+                        throw new BadRequestException($"Không thể cập nhật trạng thái từ {contract.Status} thành {newStatus}");
+                    }
                     break;
                 case nameof(ContractStatus.DepositPaid):
                     if (newStatus == nameof(ContractStatus.InProgress))
                     {
                         contract.Status = ContractStatus.InProgress.ToString();
                         contract.ActualStartDate = DateTime.Now;
+                    }else if(newStatus == nameof(ContractStatus.Cancelled))
+                    {
+                        contract.Status= ContractStatus.Cancelled.ToString();
                     }
-                    contract.Status = newStatus;
+                    else
+                    {
+                        throw new BadRequestException($"Không thể cập nhật trạng thái từ {contract.Status} thành {newStatus}");
+                    }
 
                     break;
                 case nameof(ContractStatus.InProgress):
@@ -457,6 +466,10 @@ namespace ISHE_Service.Implementations
                         contract.ActualEndDate = DateTime.Now;
                         contract.Acceptance = CreateAcceptance(contract.Id);
                     }
+                    else
+                    {
+                        throw new BadRequestException($"Không thể cập nhật trạng thái từ {contract.Status} thành {newStatus}");
+                    }
                     break;
                 case nameof(ContractStatus.WaitForPaid):
                 case nameof(ContractStatus.Completed):
@@ -464,8 +477,7 @@ namespace ISHE_Service.Implementations
                     contract.Status = newStatus;
                     break;
                 default:
-                    //throw new BadRequestException($"Không thể cập nhật trạng thái từ")
-                    break;
+                    throw new BadRequestException($"Không thể cập nhật trạng thái từ {contract.Status} thành {newStatus}");
             }
         }
 
