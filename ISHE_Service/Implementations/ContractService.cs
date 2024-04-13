@@ -447,6 +447,8 @@ namespace ISHE_Service.Implementations
                         contract.Status = ContractStatus.InProgress.ToString();
                         contract.ActualStartDate = DateTime.Now;
                     }
+                    contract.Status = newStatus;
+
                     break;
                 case nameof(ContractStatus.InProgress):
                     if (newStatus == nameof(ContractStatus.WaitForPaid))
