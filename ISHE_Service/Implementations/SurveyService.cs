@@ -38,6 +38,10 @@ namespace ISHE_Service.Implementations
         {
             var query = _surveyRepository.GetAll();
 
+            if (!string.IsNullOrEmpty(filter.CustomerName))
+            {
+                query = query.Where(sv => sv.SurveyRequest.Customer.FullName.Contains(filter.CustomerName));
+            }
 
             if (filter.AppointmentDate.HasValue)
             {
