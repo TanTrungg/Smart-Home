@@ -22,6 +22,7 @@ namespace ISHE_Service.Implementations
         private readonly IFeedbackDevicePackageRepository _feedback;
         private readonly ICustomerAccountRepository _customer;
         private readonly IDevicePackageRepository _device;
+        
         public FeedbackDevicePackageService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper)
         {
             _feedback = unitOfWork.FeedbackDevicePackage;
@@ -38,6 +39,7 @@ namespace ISHE_Service.Implementations
 
         public async Task<FeedbackDevicePackageViewModel> CreateFeedback(CreateFeedbackDevicePackageModel model)
         {
+            await CheckId(model.CustomerId, model.DevicePackageId);
             var flag = await _feedback.GetMany(fb => fb.DevicePackageId.Equals(model.DevicePackageId)
                                             && fb.CustomerId.Equals(model.CustomerId))
                                 .FirstOrDefaultAsync();
@@ -59,6 +61,12 @@ namespace ISHE_Service.Implementations
 
             var result = await _unitOfWork.SaveChanges();
             return result > 0 ? await GetFeedback(feedbackId) : null!;
+        }
+
+        private async Task CheckId(Guid customerId, Guid devicePackageId)
+        {
+            var flag1 = await _customer.GetMany(cus => cus.AccountId == customerId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy customer");
+            var flag2 = await _device.GetMany(cus => cus.Id == devicePackageId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package");
         }
 
         public async Task<FeedbackDevicePackageViewModel> UpdateFeedBack(Guid id, UpdateFeedbackDevicePackageModel model)

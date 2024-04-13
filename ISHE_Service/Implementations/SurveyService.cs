@@ -23,6 +23,7 @@ namespace ISHE_Service.Implementations
         private readonly ISurveyRequestRepository _surveyRequestRepository;
         private readonly INotificationService _notificationService;
         private readonly ITellerAccountRepository _tellerAccountRepository;
+        private readonly IDevicePackageRepository _devicePackageRepository;
         public SurveyService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService) : base(unitOfWork, mapper)
         {
             _surveyRepository = unitOfWork.Survey;
@@ -30,6 +31,7 @@ namespace ISHE_Service.Implementations
             _surveyRequestRepository = unitOfWork.SurveyRequest;
             _notificationService = notificationService;
             _tellerAccountRepository = unitOfWork.TellerAccount;
+            _devicePackageRepository = unitOfWork.DevicePackage;
         }
 
         public async Task<ListViewModel<SurveyViewModel>> GetSurveys(SurveyFilterModel filter, PaginationRequestModel pagination)
@@ -81,7 +83,12 @@ namespace ISHE_Service.Implementations
             var surveyRequest = await _surveyRequestRepository.GetMany(sv => sv.Id.Equals(model.SurveyRequestId))
                 .Include(sv => sv.Customer)
                 .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy survey request");
+            if(surveyRequest.Status != SurveyRequestStatus.InProgress.ToString())
+            {
+                throw new BadRequestException($"Survey request status: {surveyRequest.Status}");
+            }
 
+            var devicePackage = await _devicePackageRepository.GetMany(d => d.Id == model.RecommendDevicePackageId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package");
             //await CheckStaffIsAvaiableForSurvey(model.StaffId, surveyRequest.SurveyDate);
 
             var survey = new Survey

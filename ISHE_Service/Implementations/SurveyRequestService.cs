@@ -14,7 +14,6 @@ using ISHE_Utility.Enum;
 using ISHE_Utility.Exceptions;
 using ISHE_Utility.Helpers.FormatDate;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Contracts;
 
 namespace ISHE_Service.Implementations
 {
@@ -132,14 +131,14 @@ namespace ISHE_Service.Implementations
 
             if (!string.IsNullOrEmpty(model.Status))
             {
-                if (IsValidStatus(request.Status, model.Status))
-                {
+                //if (IsValidStatus(request.Status, model.Status))
+                //{
                     request.Status = model.Status;
-                }
-                else
-                {
-                    throw new BadRequestException($"Không thể cập nhật trạng thái từ {request.Status} thành {model.Status}");
-                }
+                //}
+                //else
+                //{
+                //    throw new BadRequestException($"Không thể cập nhật trạng thái từ {request.Status} thành {model.Status}");
+                //}
             }
             
             request.Description = model.Description ?? request.Description;

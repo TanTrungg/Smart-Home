@@ -35,6 +35,7 @@ namespace ISHE_Service.Implementations
         private readonly ISurveyRepository _survey;
         private readonly ICloudStorageService _cloudStorageService;
         private readonly IAcceptanceRepository _acceptance;
+        private readonly ITellerAccountRepository _teller;
 
         private readonly INotificationService _notificationService;
         private readonly IPaymentService _paymentService;
@@ -52,6 +53,7 @@ namespace ISHE_Service.Implementations
             _surveyRequest = unitOfWork.SurveyRequest;
             _survey = unitOfWork.Survey;
             _acceptance = unitOfWork.Acceptance;
+            _teller = unitOfWork.TellerAccount;
 
             _paymentService = paymentService;
             _cloudStorageService = cloudStorageService;
@@ -118,7 +120,7 @@ namespace ISHE_Service.Implementations
             {
                 try
                 {
-
+                    await checkInputId(model.TellerId, model.StaffId);
                     var customer = await GetCustomer(model.SurveyId);
                     contractId = GenerateContractId();
                     var priceOfDevice = await CreateContractDetail(contractId, model.ContractDetails, false);
@@ -158,6 +160,13 @@ namespace ISHE_Service.Implementations
                 }
             };
             return result > 0 ? await GetContract(contractId) : null!;
+        }
+
+        private async Task checkInputId(Guid tellerId, Guid staffId)
+        {
+            var flag1 = await _teller.GetMany(t => t.AccountId == tellerId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy teller");
+            var flag2 = await _staffAccount.GetMany(t => t.AccountId == staffId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy staff");
+
         }
 
         public async Task<ContractViewModel> UpdateContract(string id, UpdateContractModel model)
@@ -303,6 +312,11 @@ namespace ISHE_Service.Implementations
                 .Include(sur => sur.SurveyRequest)
                     .ThenInclude(sv => sv.Customer)
                 .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy survey");
+
+            if(survey.Status == SurveyStatus.Completed.ToString() || survey.Status == SurveyStatus.Rejected.ToString())
+            {
+                throw new BadRequestException($"Survey status: {survey.Status}");
+            }
 
             survey.Status = SurveyStatus.Completed.ToString();
             _survey.Update(survey);

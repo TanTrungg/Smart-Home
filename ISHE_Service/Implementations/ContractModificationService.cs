@@ -17,9 +17,11 @@ namespace ISHE_Service.Implementations
     {
         private readonly string[] validTypes = { "Modify", "Cancel" };
         private readonly IContractModificationRepository _contractModification;
+        private readonly IContractRepository _contractRepository;
         public ContractModificationService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper)
         {
             _contractModification = unitOfWork.ContractModification;
+            _contractRepository = unitOfWork.Contract;
         }
 
         public async Task<ContractModificationViewModel> GetContractModification(Guid id)
@@ -31,7 +33,7 @@ namespace ISHE_Service.Implementations
 
         public async Task<ContractModificationViewModel> CreateContractModification(CreateContractModificationModel model)
         {
-            ValidateType(model.Type);
+            await ValidateType(model.Type, model.ContractId);
             var id = Guid.NewGuid();
             var contractModification = new ContractModificationRequest
             {
@@ -65,12 +67,14 @@ namespace ISHE_Service.Implementations
             return result > 0 ? await GetContractModification(id) : null!;
         }
 
-        private void ValidateType(string type)
+        private async Task ValidateType(string type, string contractId)
         {
             if (!validTypes.Contains(type))
             {
                 throw new BadRequestException("Type không hợp lệ. Vui lòng chọn Type từ danh sách sau: " + string.Join(", ", validTypes));
             }
+
+            var flag = await _contractRepository.GetMany(c => c.Id == contractId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy contract");
         }
 
         private void UpdateStatus(ContractModificationRequest contractModification, string newStatus)
