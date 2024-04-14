@@ -309,8 +309,11 @@ namespace ISHE_Service.Implementations
                 {
                     var device = await _deviceRepository.GetMany(device => device.Id.Equals(item.SmartDeviceId))
                     .FirstOrDefaultAsync() ?? throw new NotFoundException($"Không tìm thấy smart device với id: {item.SmartDeviceId}");
-
-                var addDeviceToPackage = new SmartDevicePackage
+                    if (device.Status == SmartDeviceStatus.InActive.ToString())
+                    {
+                        throw new BadRequestException("Smart device không còn được hỗ trợ trên hệ thống");
+                    }
+                    var addDeviceToPackage = new SmartDevicePackage
                 {
                     SmartDeviceId = device.Id,
                     DevicePackageId = packageId,
