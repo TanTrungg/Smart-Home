@@ -144,7 +144,7 @@ namespace ISHE_Service.Implementations
                 try
                 {
                     var manufactureId = await CheckManufacturer(model.ManufacturerId);
-                    var promotionId = await CheckPromotion(model.PromotionId);
+                    List<Promotion>? promotion = await CheckPromotion(model.PromotionIds) ?? new List<Promotion>();
                     devicePackageId = Guid.NewGuid();
                     var totalPrice = await AddSmartDevices(devicePackageId, model.SmartDeviceIds);
 
@@ -152,7 +152,7 @@ namespace ISHE_Service.Implementations
                     {
                         Id = devicePackageId,
                         ManufacturerId = manufactureId,
-                        PromotionId = model.PromotionId,
+                        Promotions = promotion,
                         Name = model.Name,
                         WarrantyDuration = model.WarrantyDuration,
                         CompletionTime = model.CompletionTime,
@@ -182,6 +182,7 @@ namespace ISHE_Service.Implementations
         public async Task<DevicePackageDetailViewModel> UpdateDevicePackage(Guid id, UpdateDevicePackageModel model)
         {
             var devicePackage = await _packageRepository.GetMany(device => device.Id.Equals(id))
+                .Include(x => x.Promotions)
                 .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package");
 
             if (model.ManufacturerId.HasValue)
@@ -207,8 +208,15 @@ namespace ISHE_Service.Implementations
                 //devicePackage.Price = totalPrice;
             }
 
+            if(model.PromotionIds != null && model.PromotionIds.Count() > 0)
+            {
+                var promotion = await CheckPromotion(model.PromotionIds) ?? new List<Promotion>();
+                devicePackage.Promotions.Clear();
+                devicePackage.Promotions = promotion;
+            }
+
             devicePackage.Name = model.Name ?? devicePackage.Name;
-            devicePackage.PromotionId = model.PromotionId ?? devicePackage.PromotionId;
+            //devicePackage.PromotionId = model.PromotionId ?? devicePackage.PromotionId;
             devicePackage.WarrantyDuration = model.WarrantyDuration ?? devicePackage.WarrantyDuration;
             devicePackage.CompletionTime = model.CompletionTime ?? devicePackage.CompletionTime;
             devicePackage.Description = model.Description ?? devicePackage.Description;
@@ -262,36 +270,63 @@ namespace ISHE_Service.Implementations
                     .FirstOrDefaultAsync())?.Id ?? throw new NotFoundException("Không tìm thấy manufacturer");
         }
 
-        private async Task<Guid> CheckPromotion(Guid? id)
+        private async Task<List<Promotion>?> CheckPromotion(List<Guid>? promotionIds)
         {
-            if (id.HasValue)
+            if (promotionIds != null && promotionIds.Count > 0)
             {
-                return (await _promotionRepository
-                    .GetMany(promotion => promotion.Id.Equals(id))
-                    .FirstOrDefaultAsync())?.Id ?? throw new NotFoundException("Không tìm thấy promotion");
+                var uniqueIds = new HashSet<Guid>();
+                var result = new List<Promotion>();
+                
+                foreach(var id in promotionIds) { 
+                    if(uniqueIds.Add(id))
+                    {
+                        var pro = await _promotionRepository.GetMany(p => p.Id == id && p.Status == PromotionStatus.Active.ToString())
+                       .FirstOrDefaultAsync() ?? throw new BadRequestException("Promotion không tồn tại hoặc đã hết hạn");
+
+                        result.Add(pro);
+                    }
+                }
+
+                var flag = result.Sum(s => s.DiscountAmount);
+                if(flag >= 100)
+                {
+                    throw new BadRequestException("Total discount của sản phẩm quá 100%");
+                }
+
+                return result;
             }
-            return Guid.Empty;
+            return null;
         }
 
         private async Task<int> AddSmartDevices(Guid packageId, List<SmartDevices> smartDevices)
         {
             int totalPrice = 0;
 
+            var uniques = new HashSet<Guid>();
             foreach(var item in smartDevices)
             {
-                var device = await _deviceRepository.GetMany(device => device.Id.Equals(item.SmartDeviceId))
+                if (uniques.Add(item.SmartDeviceId))
+                {
+                    var device = await _deviceRepository.GetMany(device => device.Id.Equals(item.SmartDeviceId))
                     .FirstOrDefaultAsync() ?? throw new NotFoundException($"Không tìm thấy smart device với id: {item.SmartDeviceId}");
 
-                var addDeviceToPackage = new SmartDevicePackage
-                {
-                    SmartDeviceId = device.Id,
-                    DevicePackageId = packageId,
-                    SmartDeviceQuantity = item.Quantity.GetValidOrDefault(1)
-                };
+                    if(device.Status == SmartDeviceStatus.InActive.ToString())
+                    {
+                        throw new BadRequestException("Smart device không còn được hỗ trợ trên hệ thống");
+                    }
 
-                _smartDevicePackage.Add(addDeviceToPackage);
+                    var addDeviceToPackage = new SmartDevicePackage
+                    {
+                        SmartDeviceId = device.Id,
+                        DevicePackageId = packageId,
+                        SmartDeviceQuantity = item.Quantity.GetValidOrDefault(1)
+                    };
 
-                totalPrice += device.Price * item.Quantity; 
+                    _smartDevicePackage.Add(addDeviceToPackage);
+
+                    totalPrice += device.Price * item.Quantity;
+                }
+                 
             }
             return totalPrice;
         }

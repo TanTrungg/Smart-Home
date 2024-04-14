@@ -1,4 +1,6 @@
-﻿namespace ISHE_Data.Models.Views
+﻿using ISHE_Data.Entities;
+
+namespace ISHE_Data.Models.Views
 {
     public class DevicePackageDetailViewModel
     {
@@ -13,8 +15,9 @@
         public DateTime CreateAt { get; set; }
 
         public virtual ManufacturerViewModel Manufacturer { get; set; } = null!;
-        public virtual PromotionViewModel? Promotion { get; set; }
-        
+        //public virtual PromotionViewModel? Promotion { get; set; }
+        public virtual ICollection<PromotionViewModel>? Promotions { get; set; }
+
         public virtual ICollection<FeedbackDevicePackageViewModel> FeedbackDevicePackages { get; set; } = new List<FeedbackDevicePackageViewModel>();
         public virtual ICollection<ImageViewModel> Images { get; set; } = new List<ImageViewModel>();
         //public virtual ICollection<Survey> Surveys { get; set; }

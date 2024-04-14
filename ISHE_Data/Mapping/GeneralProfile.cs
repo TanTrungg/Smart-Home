@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ISHE_Data.Entities;
 using ISHE_Data.Models.Views;
+using ISHE_Utility.Enum;
 
 namespace ISHE_Data.Mapping
 {
@@ -60,8 +61,10 @@ namespace ISHE_Data.Mapping
                 .ForMember(dest => dest.Manufacturer, otp => otp.MapFrom(src => src.Manufacturer.Name));
             CreateMap<Promotion, PromotionViewModel>();
             CreateMap<Promotion, PromotionDetailViewModel>();
-            CreateMap<DevicePackage, DevicePackageViewModel>();
-            CreateMap<DevicePackage, DevicePackageDetailViewModel>();
+            CreateMap<DevicePackage, DevicePackageViewModel>()
+                .ForMember(dest => dest.Promotions, otp => otp.MapFrom(src => src.Promotions.Where(p => p.Status == PromotionStatus.Active.ToString())));
+            CreateMap<DevicePackage, DevicePackageDetailViewModel>()
+                .ForMember(dest => dest.Promotions, otp => otp.MapFrom(src => src.Promotions.Where(p => p.Status == PromotionStatus.Active.ToString()))); ;
             CreateMap<SurveyRequest, SurveyRequestViewModel>();
             CreateMap<Survey, SurveyViewModel>();
             CreateMap<Contract, PartialContractViewModel>();
@@ -94,6 +97,8 @@ namespace ISHE_Data.Mapping
                     Type = notification.Type
                 }));
             CreateMap<ContractModificationRequest, ContractModificationViewModel>();
+            CreateMap<DevicePackage, PatialDevicePackageViewModel>()
+                .ForMember(dest => dest.Images, otp => otp.MapFrom(src => src.Images.FirstOrDefault()!.Url));
         }
     }
 }

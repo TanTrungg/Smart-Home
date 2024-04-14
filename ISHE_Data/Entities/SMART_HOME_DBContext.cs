@@ -45,7 +45,7 @@ namespace ISHE_Data.Entities
             if (!optionsBuilder.IsConfigured)
             {
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                //optionsBuilder.UseSqlServer("Server=TAN-TRUNG\\HAMMER;Database=SMART_HOME_DB;Persist Security Info=False;User ID=sa;Password=123456;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;");
+//                optionsBuilder.UseSqlServer("Server=TAN-TRUNG\\HAMMER;Database=SMART_HOME_DB;Persist Security Info=False;User ID=sa;Password=123456;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;");
             }
         }
 
@@ -268,11 +268,6 @@ namespace ISHE_Data.Entities
                     .HasForeignKey(d => d.ManufacturerId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__DevicePac__Manuf__4AB81AF0");
-
-                entity.HasOne(d => d.Promotion)
-                    .WithMany(p => p.DevicePackages)
-                    .HasForeignKey(d => d.PromotionId)
-                    .HasConstraintName("FK__DevicePac__Promo__4BAC3F29");
             });
 
             modelBuilder.Entity<DevicePackageUsage>(entity =>
@@ -481,6 +476,19 @@ namespace ISHE_Data.Entities
                 entity.Property(e => e.StartDate).HasColumnType("datetime");
 
                 entity.Property(e => e.Status).HasMaxLength(100);
+
+                entity.HasMany(d => d.DevicePackages)
+                    .WithMany(p => p.Promotions)
+                    .UsingEntity<Dictionary<string, object>>(
+                        "SmartDevicePromotion",
+                        l => l.HasOne<DevicePackage>().WithMany().HasForeignKey("DevicePackageId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK__SmartDevi__Devic__214BF109"),
+                        r => r.HasOne<Promotion>().WithMany().HasForeignKey("PromotionId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK__SmartDevi__Promo__2057CCD0"),
+                        j =>
+                        {
+                            j.HasKey("PromotionId", "DevicePackageId").HasName("PK__SmartDev__B890BF4271560E8E");
+
+                            j.ToTable("SmartDevicePromotion");
+                        });
             });
 
             modelBuilder.Entity<Role>(entity =>

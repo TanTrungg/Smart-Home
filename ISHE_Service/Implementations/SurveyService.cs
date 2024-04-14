@@ -92,7 +92,16 @@ namespace ISHE_Service.Implementations
                 throw new BadRequestException($"Survey request status: {surveyRequest.Status}");
             }
 
-            var devicePackage = await _devicePackageRepository.GetMany(d => d.Id == model.RecommendDevicePackageId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package");
+            if (model.RecommendDevicePackageId.HasValue)
+            {
+                var devicePackage = await _devicePackageRepository.GetMany(d => d.Id == model.RecommendDevicePackageId).FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package");
+                
+                if (devicePackage.Status == DevicePackageStatus.InActive.ToString())
+                {
+                    throw new BadRequestException("Device package không còn hỗ trợ trên hệ thống");
+                }
+            }
+            
             //await CheckStaffIsAvaiableForSurvey(model.StaffId, surveyRequest.SurveyDate);
 
             var survey = new Survey
