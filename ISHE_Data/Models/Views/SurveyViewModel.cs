@@ -9,7 +9,7 @@
         public string Status { get; set; } = null!;
         public DateTime CreateAt { get; set; }
 
-        public virtual DevicePackageDetailViewModel? RecommendDevicePackage { get; set; }
+        public virtual DevicePackageViewModel? RecommendDevicePackage { get; set; }
         public virtual SurveyRequestViewModel SurveyRequest { get; set; } = null!;
         //public virtual Contract? Contract { get; set; }
     }

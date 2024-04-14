@@ -12,11 +12,11 @@ namespace ISHE_Data.Entities
             Images = new HashSet<Image>();
             SmartDevicePackages = new HashSet<SmartDevicePackage>();
             Surveys = new HashSet<Survey>();
+            Promotions = new HashSet<Promotion>();
         }
 
         public Guid Id { get; set; }
         public Guid ManufacturerId { get; set; }
-        public Guid? PromotionId { get; set; }
         public string Name { get; set; } = null!;
         public int? WarrantyDuration { get; set; }
         public string Description { get; set; } = null!;
@@ -26,11 +26,12 @@ namespace ISHE_Data.Entities
         public DateTime CreateAt { get; set; }
 
         public virtual Manufacturer Manufacturer { get; set; } = null!;
-        public virtual Promotion? Promotion { get; set; }
         public virtual ICollection<DevicePackageUsage> DevicePackageUsages { get; set; }
         public virtual ICollection<FeedbackDevicePackage> FeedbackDevicePackages { get; set; }
         public virtual ICollection<Image> Images { get; set; }
         public virtual ICollection<SmartDevicePackage> SmartDevicePackages { get; set; }
         public virtual ICollection<Survey> Surveys { get; set; }
+
+        public virtual ICollection<Promotion> Promotions { get; set; }
     }
 }

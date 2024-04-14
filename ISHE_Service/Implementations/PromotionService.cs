@@ -77,7 +77,7 @@ namespace ISHE_Service.Implementations
                 try
                 {
                     CheckValidDate(model.StartDate, model.EndDate);
-
+                    var packages = await AddDevicePackage(model.DevicePackageIds) ?? new List<DevicePackage>();
                     promotionId = Guid.NewGuid();
                     var promotion = new Promotion
                     {
@@ -87,11 +87,12 @@ namespace ISHE_Service.Implementations
                         StartDate = model.StartDate,
                         EndDate = model.EndDate,
                         Description = model.Description,
+                        DevicePackages = packages,
                         Status = PromotionStatus.Active.ToString()
                     };
 
                     _promotionRepository.Add(promotion);
-                    await AddPromotionIdToDevicePackage(promotionId, model.DevicePackageIds, false);
+                    //await AddPromotionIdToDevicePackage(promotionId, model.DevicePackageIds, false);
 
                     result = await _unitOfWork.SaveChanges();
 
@@ -109,7 +110,15 @@ namespace ISHE_Service.Implementations
         public async Task<PromotionDetailViewModel> UpdatePromotion(Guid id, UpdatePromotionModel model)
         {
             var promotion = await _promotionRepository.GetMany(pro => pro.Id.Equals(id))
+                .Include(x => x.DevicePackages)
                 .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy promotion");
+
+            if(model.DevicePackageIds != null && model.DevicePackageIds.Any())
+            {
+                var packages = await AddDevicePackage(model.DevicePackageIds) ?? new List<DevicePackage>();
+                promotion.DevicePackages.Clear();
+                promotion.DevicePackages = packages;
+            }
 
             promotion.Name = model.Name ?? promotion.Name;
             promotion.DiscountAmount = model.DiscountAmount ?? promotion.DiscountAmount;
@@ -119,7 +128,7 @@ namespace ISHE_Service.Implementations
             promotion.Status = model.Status ?? promotion.Status;
 
             _promotionRepository.Update(promotion);
-            await AddPromotionIdToDevicePackage(id, model.DevicePackageIds, true);
+            //await AddPromotionIdToDevicePackage(id, model.DevicePackageIds, true);
 
             var result = await _unitOfWork.SaveChanges();
 
@@ -146,35 +155,55 @@ namespace ISHE_Service.Implementations
         }
 
         //PRIVATE METHOD
-        private async Task<ICollection<DevicePackage>> AddPromotionIdToDevicePackage(Guid promotionId, List<Guid>? devicePackageIds, bool isUpdate)
+
+        private async Task<List<DevicePackage>?> AddDevicePackage(List<Guid>? devicePackageIds)
         {
-            var listDevicePackage = new List<DevicePackage>();
+            var result = new List<DevicePackage>();
             if (devicePackageIds != null && devicePackageIds.Any())
             {
-                if (isUpdate)
-                {
-                    var existDevicePackages = await _devicePackageRepository.GetMany(device => device.PromotionId.Equals(promotionId)).ToListAsync();
-                    foreach (var devicePackage in existDevicePackages)
-                    {
-                        devicePackage.PromotionId = null;
-                    }
-                    _devicePackageRepository.UpdateRange(existDevicePackages);
-                }
-
+                var uniqueIds = new HashSet<Guid>();
                 foreach (var devicePackageId in devicePackageIds)
                 {
-                    var devicePackage = await _devicePackageRepository.GetMany(device => device.Id.Equals(devicePackageId))
-                        .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package id: " + devicePackageId);
+                    if (uniqueIds.Add(devicePackageId))
+                    {
+                        var package = await _devicePackageRepository.GetMany(d => d.Id == devicePackageId)
+                            .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy package");
 
-                    devicePackage.PromotionId = promotionId;
-                    _devicePackageRepository.Update(devicePackage);
-
-                    listDevicePackage.Add(devicePackage);
+                        result.Add(package);
+                    }
                 }
-
             }
-            return listDevicePackage;
+            return result;
         }
+        //private async Task<ICollection<DevicePackage>> AddPromotionIdToDevicePackage(Guid promotionId, List<Guid>? devicePackageIds, bool isUpdate)
+        //{
+        //    var listDevicePackage = new List<DevicePackage>();
+        //    if (devicePackageIds != null && devicePackageIds.Any())
+        //    {
+        //        if (isUpdate)
+        //        {
+        //            var existDevicePackages = await _devicePackageRepository.GetMany(device => device.PromotionId.Equals(promotionId)).ToListAsync();
+        //            foreach (var devicePackage in existDevicePackages)
+        //            {
+        //                devicePackage.PromotionId = null;
+        //            }
+        //            _devicePackageRepository.UpdateRange(existDevicePackages);
+        //        }
+
+        //        foreach (var devicePackageId in devicePackageIds)
+        //        {
+        //            var devicePackage = await _devicePackageRepository.GetMany(device => device.Id.Equals(devicePackageId))
+        //                .FirstOrDefaultAsync() ?? throw new NotFoundException("Không tìm thấy device package id: " + devicePackageId);
+
+        //            devicePackage.PromotionId = promotionId;
+        //            _devicePackageRepository.Update(devicePackage);
+
+        //            listDevicePackage.Add(devicePackage);
+        //        }
+
+        //    }
+        //    return listDevicePackage;
+        //}
 
         private void CheckValidDate(DateTime startDate, DateTime endDate)
         {

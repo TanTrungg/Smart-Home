@@ -150,22 +150,6 @@ CREATE TABLE Promotion(
 );
 GO
 
-CREATE TRIGGER trg_Promotion_StatusExpired
-ON Promotion
-AFTER UPDATE
-AS
-BEGIN
-    IF UPDATE(Status)
-    BEGIN
-        UPDATE DevicePackage
-        SET PromotionId = NULL
-        FROM DevicePackage AS dp
-        JOIN Promotion AS p ON dp.PromotionId = p.Id
-        JOIN inserted AS i ON p.Id = i.Id
-        WHERE i.Status = 'Expired';
-    END
-END;
-
 --Table SmartDevice
 DROP TABLE IF EXISTS SmartDevice;
 GO
@@ -188,7 +172,6 @@ GO
 CREATE TABLE DevicePackage(
 	Id uniqueidentifier primary key NOT NULL,
 	ManufacturerId uniqueidentifier foreign key references Manufacturer(Id) NOT NULL,
-	PromotionId uniqueidentifier foreign key references Promotion(Id),
 	[Name] nvarchar(255) NOT NULL,
 	WarrantyDuration int,
 	[Description] nvarchar(max) NOT NULL,
@@ -198,6 +181,36 @@ CREATE TABLE DevicePackage(
 	CreateAt datetime NOT NULL DEFAULT DATEADD(HOUR, 7, GETUTCDATE())
 );
 GO
+
+
+--Table DevicePackage_Promotion
+DROP TABLE IF EXISTS SmartDevicePromotion;
+GO
+CREATE TABLE SmartDevicePromotion(
+	PromotionId uniqueidentifier foreign key references Promotion(Id) NOT NULL,
+	DevicePackageId uniqueidentifier foreign key references DevicePackage(Id) NOT NULL,
+	SmartDeviceQuantity int NOT NULL,
+	primary key(PromotionId, DevicePackageId)
+);
+GO
+
+----Trigger
+--CREATE TRIGGER trg_Promotion_StatusExpired
+--ON Promotion
+--AFTER UPDATE
+--AS
+--BEGIN
+--    IF UPDATE(Status)
+--    BEGIN
+--        DELETE FROM SmartDevicePromotion
+--        WHERE PromotionId IN (
+--            SELECT Id
+--            FROM Promotion
+--            WHERE Status = 'Expired'
+--        );
+--    END
+--END;
+--GO;
 
 --Table SmartDevicePackage
 DROP TABLE IF EXISTS SmartDevicePackage;
