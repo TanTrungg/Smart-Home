@@ -136,7 +136,12 @@ namespace ISHE_API.Configurations
                 () => serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IPromotionService>().CheckExpiredPromotion(),
                 "0 17 * * *"
             );
-            
+
+            recurringJobManager.AddOrUpdate(
+                "CheckActive",
+                () => serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IPromotionService>().CheckActivePromotion(),
+                "0 17 * * *"
+            );
         }
     }
 }

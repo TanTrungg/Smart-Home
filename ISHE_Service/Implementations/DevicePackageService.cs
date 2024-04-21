@@ -210,6 +210,11 @@ namespace ISHE_Service.Implementations
 
             if(model.PromotionIds != null && model.PromotionIds.Count() > 0)
             {
+                if(devicePackage.Status == DevicePackageStatus.InActive.ToString())
+                {
+                    throw new BadRequestException("Gói sản phẩm đã không còn được hỗ trợ");
+                }
+
                 var promotion = await CheckPromotion(model.PromotionIds) ?? new List<Promotion>();
                 devicePackage.Promotions.Clear();
                 devicePackage.Promotions = promotion;
@@ -280,22 +285,59 @@ namespace ISHE_Service.Implementations
                 foreach(var id in promotionIds) { 
                     if(uniqueIds.Add(id))
                     {
-                        var pro = await _promotionRepository.GetMany(p => p.Id == id && p.Status == PromotionStatus.Active.ToString())
-                       .FirstOrDefaultAsync() ?? throw new BadRequestException("Promotion không tồn tại hoặc đã hết hạn");
+                        var pro = await _promotionRepository.GetMany(p => p.Id == id)
+                       .FirstOrDefaultAsync() ?? throw new BadRequestException("Promotion không tồn tại");
+
+                        if(pro.Status == PromotionStatus.Expired.ToString())
+                        {
+                            throw new BadRequestException("Promotion đã kết thúc");
+                        }
 
                         result.Add(pro);
                     }
                 }
 
-                var flag = result.Sum(s => s.DiscountAmount);
-                if(flag >= 100)
+
+                var overlappingPromotions = FindOverlappingPromotions(result);
+                if (overlappingPromotions.Any())
                 {
-                    throw new BadRequestException("Total discount của sản phẩm quá 100%");
+
+                    var overlappingPromotionNames = overlappingPromotions
+                        .SelectMany(pair => new[] { pair.Item1.Name, pair.Item2.Name })
+                        .Distinct();
+                    var overlappingPromotionNamesStr = string.Join(" và ", overlappingPromotionNames);
+
+                    throw new BadRequestException($"Có chương trình khuyến mãi {overlappingPromotionNamesStr} bị trùng khoảng thời gian");
                 }
+
+
+                //var flag = result.Sum(s => s.DiscountAmount);
+                //if(flag >= 100)
+                //{
+                //    throw new BadRequestException("Total discount của sản phẩm quá 100%");
+                //}
 
                 return result;
             }
             return null;
+        }
+
+        private List<(Promotion, Promotion)> FindOverlappingPromotions(List<Promotion> promotions)
+        {
+            var overlappingPromotions = new List<(Promotion, Promotion)>();
+
+            for (int i = 0; i < promotions.Count - 1; i++)
+            {
+                for (int j = i + 1; j < promotions.Count; j++)
+                {
+                    if (promotions[i].StartDate <= promotions[j].EndDate && promotions[j].StartDate <= promotions[i].EndDate)
+                    {
+                        overlappingPromotions.Add((promotions[i], promotions[j]));
+                    }
+                }
+            }
+
+            return overlappingPromotions;
         }
 
         private async Task<int> AddSmartDevices(Guid packageId, List<SmartDevices> smartDevices)
@@ -314,11 +356,11 @@ namespace ISHE_Service.Implementations
                         throw new BadRequestException("Smart device không còn được hỗ trợ trên hệ thống");
                     }
                     var addDeviceToPackage = new SmartDevicePackage
-                {
-                    SmartDeviceId = device.Id,
-                    DevicePackageId = packageId,
-                    SmartDeviceQuantity = item.Quantity.GetValidOrDefault(1)
-                };
+                    {
+                        SmartDeviceId = device.Id,
+                        DevicePackageId = packageId,
+                        SmartDeviceQuantity = item.Quantity.GetValidOrDefault(1)
+                    };
 
                     _smartDevicePackage.Add(addDeviceToPackage);
 

@@ -13,5 +13,6 @@ namespace ISHE_Service.Interfaces
         Task<PromotionDetailViewModel> CreatePromotion(CreatePromotionModel model);
         Task<PromotionDetailViewModel> UpdatePromotion(Guid id, UpdatePromotionModel model);
         Task CheckExpiredPromotion();
+        Task CheckActivePromotion();
     }
 }

@@ -87,6 +87,7 @@ namespace ISHE_Service.Implementations
             }
 
             var result = await _unitOfWork.SaveChanges();
+            
             if (result > 0)
             {
                 if (deviceTokens.Any())
