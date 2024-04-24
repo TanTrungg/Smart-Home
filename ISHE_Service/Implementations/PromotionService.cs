@@ -12,6 +12,7 @@ using ISHE_Service.Interfaces;
 using ISHE_Utility.Enum;
 using ISHE_Utility.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Contracts;
 
 namespace ISHE_Service.Implementations
 {
@@ -117,7 +118,7 @@ namespace ISHE_Service.Implementations
 
             promotion.Name = model.Name ?? promotion.Name;
             promotion.DiscountAmount = model.DiscountAmount ?? promotion.DiscountAmount;
-            promotion.StartDate = model.StartDate ?? promotion.StartDate;
+            //promotion.StartDate = model.StartDate ?? promotion.StartDate;
             promotion.EndDate = model.EndDate ?? promotion.EndDate;
             //CheckValidDate(promotion.StartDate, promotion.EndDate);
             if(promotion.StartDate >= promotion.EndDate)
@@ -126,6 +127,10 @@ namespace ISHE_Service.Implementations
             }
 
             promotion.Description = model.Description ?? promotion.Description;
+            if (!string.IsNullOrEmpty(model.Status))
+            {
+                UpdateStatus(promotion, model.Status);
+            }
             promotion.Status = model.Status ?? promotion.Status;
             
             if (model.DevicePackageIds != null && model.DevicePackageIds.Any())
@@ -140,6 +145,30 @@ namespace ISHE_Service.Implementations
             var result = await _unitOfWork.SaveChanges();
 
             return result > 0 ? await GetPromotion(id) : null!;
+        }
+
+        private void UpdateStatus(Promotion promotion, string newStatus)
+        {
+            switch (promotion.Status)
+            {
+                case nameof(PromotionStatus.Active):
+                    if(newStatus == nameof(PromotionStatus.Expired))
+                    {
+                        promotion.Status = newStatus;
+                        promotion.EndDate = DateTime.Now;
+                    }
+                    else
+                    {
+                        throw new BadRequestException($"Không thể cập nhật trạng thái từ {promotion.Status} thành {newStatus}");
+                    }
+                        break;
+                //case nameof(PromotionStatus.InActive):
+                //case nameof(PromotionStatus.Expired):
+                //    promotion.Status = newStatus;
+                //    break;
+                default:
+                    throw new BadRequestException($"Không thể cập nhật trạng thái từ {promotion.Status} thành {newStatus}");
+            }
         }
 
         public async Task CheckExpiredPromotion()
