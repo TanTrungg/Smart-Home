@@ -119,12 +119,26 @@ namespace ISHE_Service.Implementations
             promotion.Name = model.Name ?? promotion.Name;
             promotion.DiscountAmount = model.DiscountAmount ?? promotion.DiscountAmount;
             //promotion.StartDate = model.StartDate ?? promotion.StartDate;
-            promotion.EndDate = model.EndDate ?? promotion.EndDate;
+            //promotion.EndDate = model.EndDate ?? promotion.EndDate;
             //CheckValidDate(promotion.StartDate, promotion.EndDate);
-            if(promotion.StartDate >= promotion.EndDate)
+            if (model.EndDate.HasValue)
             {
-                throw new BadRequestException("Ngày bắt đầu không thể lớn hơn ngày kết thúc");
+                if(promotion.Status == PromotionStatus.Expired.ToString())
+                {
+                    throw new BadRequestException("Khuyến mãi đã hết hạn");
+                }
+                if (model.EndDate <= DateTime.Now)
+                {
+                    throw new BadRequestException("Ngày kết thúc phải lớn hơn thời gian hiện tại");
+                }
+                if(model.EndDate < promotion.StartDate)
+                {
+                    throw new BadRequestException("Ngày kết thúc phải lớn hơn ngày bắt đầu");
+                }
+
+                promotion.EndDate = model.EndDate.Value;
             }
+            
 
             promotion.Description = model.Description ?? promotion.Description;
             if (!string.IsNullOrEmpty(model.Status))
