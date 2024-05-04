@@ -45,7 +45,8 @@ builder.Services.AddCors(options =>
                                   "http://localhost:5174",
                                   "http://localhost:5173",
                                   "http://192.168.56.1:8100",
-                                  "http://192.168.118.2:8100");
+                                  "http://192.168.118.2:8100",
+                                  "https://phatdat-store.web.app");
                           policy.AllowCredentials();
                       });
 });

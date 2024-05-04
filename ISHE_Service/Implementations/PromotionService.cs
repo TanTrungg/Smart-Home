@@ -209,7 +209,7 @@ namespace ISHE_Service.Implementations
             var currentTime = DateTime.Now;
 
             var activePromotion = await _promotionRepository
-                    .GetMany(promotion => promotion.StartDate.Date == currentTime.Date && promotion.Status == PromotionStatus.InActive.ToString())
+                    .GetMany(promotion => promotion.StartDate.Date <= currentTime.Date && promotion.Status == PromotionStatus.InActive.ToString())
                     .ToListAsync();
 
             if (activePromotion.Count == 0) return;
