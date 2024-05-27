@@ -47,7 +47,9 @@ namespace ISHE_API.Configurations
                     Description = @"APIs for Application to management system and installing equipment for households at Phat Dat store in Ho Chi Minh City.
                         <br/>
                         <br/>
-                        <strong>WebApp:</strong> <a href='' target='_blank'></a>",
+                        <strong>Web app for customer:</strong> <a href='https://phatdat-store.web.app' target='_blank'>https://phatdat-store.web.app</a>
+                        <br/>
+                        <strong>Web app for teller:</strong> <a href='https://phatdat-teller.web.app' target='_blank'>https://phatdat-teller.web.app</a>",
                     Version = "v1"
                 });
                 c.DescribeAllParametersInCamelCase();
