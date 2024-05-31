@@ -225,8 +225,8 @@ namespace ISHE_Service.Implementations
             var tellers = await _tellerAccountRepository
                             .GetAll()
                             .Select(tl => tl.AccountId)
-                            .FirstOrDefaultAsync();
-            await _notificationService.SendNotification(new List<Guid> { tellers }, message);
+                            .ToListAsync();
+            await _notificationService.SendNotification(tellers , message);
         }
 
         private async Task SendNotificationToStaff(SurveyRequest request)
