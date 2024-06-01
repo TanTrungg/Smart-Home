@@ -38,6 +38,10 @@ namespace ISHE_Service.Implementations
         {
             var query = _surveyRepository.GetAll();
 
+            if (filter.StaffId.HasValue)
+            {
+                query = query.Where(sv => sv.SurveyRequest.StaffId == filter.StaffId.Value);
+            }
             if (!string.IsNullOrEmpty(filter.CustomerName))
             {
                 query = query.Where(sv => sv.SurveyRequest.Customer.FullName.Contains(filter.CustomerName));
