@@ -84,7 +84,7 @@ namespace ISHE_Service.Implementations
             {
                 merchantinfo = "Phat Dat Store",
                 preferred_payment_method = new object[] { },
-                redirecturl = $"https://localhost/customer-role/contracts/{contract.Id}"
+                redirecturl = $"https://localhost/customer-role/contracts"
             };
             DateTime now = DateTime.UtcNow.AddHours(7);
             string AppTransId = now.ToString("yyMMddHHmmssfff") + "_" + model.ContractId;
