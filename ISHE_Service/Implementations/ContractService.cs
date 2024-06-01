@@ -503,7 +503,15 @@ namespace ISHE_Service.Implementations
                 case nameof(ContractStatus.WaitForPaid):
                 case nameof(ContractStatus.Completed):
                 case nameof(ContractStatus.Cancelled):
-                    contract.Status = newStatus;
+                    if(newStatus == nameof(ContractStatus.WaitForPaid) || newStatus == nameof(ContractStatus.Completed) || newStatus == nameof(ContractStatus.Cancelled))
+                    {
+                        contract.Status = newStatus;
+
+                    }
+                    else
+                    {
+                        throw new BadRequestException($"Không thể cập nhật trạng thái từ {contract.Status} thành {newStatus}");
+                    }
                     break;
                 default:
                     throw new BadRequestException($"Không thể cập nhật trạng thái từ {contract.Status} thành {newStatus}");
