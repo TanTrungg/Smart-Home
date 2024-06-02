@@ -64,7 +64,8 @@ namespace ISHE_Data.Mapping
             CreateMap<DevicePackage, DevicePackageViewModel>()
                 .ForMember(dest => dest.Promotions, otp => otp.MapFrom(src => src.Promotions.Where(p => p.Status == PromotionStatus.Active.ToString())));
             CreateMap<DevicePackage, DevicePackageDetailViewModel>()
-                .ForMember(dest => dest.Promotions, otp => otp.MapFrom(src => src.Promotions.Where(p => p.Status == PromotionStatus.Active.ToString()))); ;
+                .ForMember(dest => dest.Promotions, otp => otp.MapFrom(src => src.Promotions.Where(p => p.Status == PromotionStatus.Active.ToString())))
+                .ForMember(dest => dest.SmartDevicePackages, otp => otp.MapFrom(src => src.SmartDevicePackages.Where(p => p.SmartDevice.Status == SmartDeviceStatus.Active.ToString())));
             CreateMap<SurveyRequest, SurveyRequestViewModel>();
             CreateMap<Survey, SurveyViewModel>();
             CreateMap<Contract, PartialContractViewModel>();

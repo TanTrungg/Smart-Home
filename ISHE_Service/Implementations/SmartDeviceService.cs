@@ -19,6 +19,7 @@ namespace ISHE_Service.Implementations
     public class SmartDeviceService : BaseService, ISmartDeviceService
     {
         private readonly ISmartDeviceRepository _smartDeviceRepository;
+        private readonly IDevicePackageRepository _devicePackageRepository;
         private readonly IImageRepository _imageRepository;
         private readonly IManufacturerRepository _manufacturerRepository;
 
@@ -29,6 +30,7 @@ namespace ISHE_Service.Implementations
             _imageRepository = unitOfWork.Image;
             _manufacturerRepository = unitOfWork.Manufacturer;
             _cloudStorageService = cloudStorageService;
+            _devicePackageRepository = unitOfWork.DevicePackage;
         }
 
         public async Task<ListViewModel<SmartDeviceDetailViewModel>> GetSmartDevices(SmartDeviceFilterModel filter, PaginationRequestModel pagination)
@@ -157,12 +159,46 @@ namespace ISHE_Service.Implementations
             smartDevice.Price = model.Price ?? smartDevice.Price;
             smartDevice.InstallationPrice = model.InstallationPrice ?? smartDevice.InstallationPrice;
             smartDevice.DeviceType = model.DeviceType ?? smartDevice.DeviceType;
-            smartDevice.Status = model.Status ?? smartDevice.Status;
+
+            if (!string.IsNullOrEmpty(model.Status))
+            {
+                await UpdateStatus(model.Status, smartDevice);
+            }
 
             _smartDeviceRepository.Update(smartDevice);
 
             var result = await _unitOfWork.SaveChanges();
             return result > 0 ? await GetSmartDevice(id) : null!;
+        }
+
+        private async Task UpdateStatus(string newStatus, SmartDevice smartDevice)
+        {
+            if (newStatus != smartDevice.Status)
+            {
+                if(newStatus == SmartDeviceStatus.Active.ToString() || newStatus == SmartDeviceStatus.InActive.ToString())
+                {
+                    var packages = await _devicePackageRepository.GetMany(d => d.SmartDevicePackages.Any(x => x.SmartDeviceId == smartDevice.Id)).ToListAsync();
+                    foreach (var package in packages)
+                    {
+                        if (newStatus == nameof(SmartDeviceStatus.InActive))
+                        {
+                            package.Price -= smartDevice.Price;
+                        }
+                        else if (newStatus == nameof(SmartDeviceStatus.Active))
+                        {
+                            package.Price += smartDevice.Price;
+                        }
+                    }
+                    _devicePackageRepository.UpdateRange(packages);
+
+                    smartDevice.Status = newStatus;
+                }
+                else
+                {
+                    throw new BadRequestException($"Không thể cập nhập trạng thái từ {smartDevice.Status} thành {newStatus}");
+                }
+                
+            }
         }
 
         public async Task<SmartDeviceDetailViewModel> UpdateSmartDeviceImage(Guid id, UpdateImageModel model)

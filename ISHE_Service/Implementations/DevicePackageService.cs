@@ -403,6 +403,11 @@ namespace ISHE_Service.Implementations
                 }
                 else
                 {
+                    if (device.Status == SmartDeviceStatus.InActive.ToString())
+                    {
+                        throw new BadRequestException("Smart device không còn được hỗ trợ trên hệ thống");
+                    }
+
                     _smartDevicePackage.Add(new SmartDevicePackage
                     {
                         SmartDeviceId = device.Id,
