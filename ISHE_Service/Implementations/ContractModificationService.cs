@@ -5,8 +5,10 @@ using ISHE_Data.Entities;
 using ISHE_Data.Models.Requests.Post;
 using ISHE_Data.Models.Requests.Put;
 using ISHE_Data.Models.Views;
+using ISHE_Data.Repositories.Implementations;
 using ISHE_Data.Repositories.Interfaces;
 using ISHE_Service.Interfaces;
+using ISHE_Utility.Constants;
 using ISHE_Utility.Enum;
 using ISHE_Utility.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -18,10 +20,15 @@ namespace ISHE_Service.Implementations
         private readonly string[] validTypes = { "Modify", "Cancel" };
         private readonly IContractModificationRepository _contractModification;
         private readonly IContractRepository _contractRepository;
-        public ContractModificationService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper)
+        private readonly ITellerAccountRepository _tellerAccountRepository;
+        private readonly INotificationService _notificationService;
+
+        public ContractModificationService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService) : base(unitOfWork, mapper)
         {
             _contractModification = unitOfWork.ContractModification;
             _contractRepository = unitOfWork.Contract;
+            _tellerAccountRepository = unitOfWork.TellerAccount;
+            _notificationService = notificationService;
         }
 
         public async Task<ContractModificationViewModel> GetContractModification(Guid id)
@@ -47,7 +54,7 @@ namespace ISHE_Service.Implementations
             _contractModification.Add(contractModification);
 
             var result = await _unitOfWork.SaveChanges();
-
+            await SendNotificationToTeller(model.ContractId);
             return result > 0 ? await GetContractModification(id) : null!;
         }
 
@@ -98,6 +105,27 @@ namespace ISHE_Service.Implementations
                 default:
                     break;
             }
+        }
+
+        private async Task SendNotificationToTeller(string contractId)
+        {
+            var message = new CreateNotificationModel
+            {
+                Title = $"Yêu cầu chỉnh sửa hợp đồng",
+                Body = $"Có một yêu cầu chỉnh sửa hợp đồng {contractId}. Vui lòng xem xét và xử lý.",
+                Data = new NotificationDataViewModel
+                {
+                    CreateAt = DateTime.Now,
+                    Type = NotificationType.ContractsModification,
+                    Link = contractId
+                }
+            };
+
+            var tellers = await _tellerAccountRepository
+                            .GetAll()
+                            .Select(tl => tl.AccountId)
+                            .ToListAsync();
+            await _notificationService.SendNotification(tellers, message);
         }
     }
 }

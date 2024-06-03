@@ -243,7 +243,7 @@ namespace ISHE_Service.Implementations
                 Data = new NotificationDataViewModel
                 {
                     CreateAt = DateTime.Now,
-                    Type = NotificationType.SurveyReport,
+                    Type = type == "đật cọc" ? NotificationType.Deposit : NotificationType.Complete,
                     Link = contractId
                 }
             };
