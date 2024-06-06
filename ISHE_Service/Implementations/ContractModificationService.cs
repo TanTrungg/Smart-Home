@@ -2,6 +2,8 @@
 using AutoMapper.QueryableExtensions;
 using ISHE_Data;
 using ISHE_Data.Entities;
+using ISHE_Data.Models.Requests.Filters;
+using ISHE_Data.Models.Requests.Get;
 using ISHE_Data.Models.Requests.Post;
 using ISHE_Data.Models.Requests.Put;
 using ISHE_Data.Models.Views;
@@ -31,6 +33,41 @@ namespace ISHE_Service.Implementations
             _notificationService = notificationService;
         }
 
+        public async Task<ListViewModel<ContractModificationViewModel>> GetContractModifications(ContractModificationFilterModel filter, PaginationRequestModel pagination)
+        {
+            var query = _contractModification.GetAll();
+            
+            if (!string.IsNullOrEmpty(filter.ContractId))
+            {
+                query = query.Where(c => c.ContractId.Contains(filter.ContractId));
+            }
+
+            if (filter.CreatedDate.HasValue)
+            {
+                query = query.Where(c => c.CreateAt.Date == filter.CreatedDate.Value.Date);
+            }
+
+            var totalRow = await query.AsNoTracking().CountAsync();
+            var paginatedQuery = query
+                .OrderByDescending(c => c.CreateAt)
+                .Skip(pagination.PageNumber * pagination.PageSize)
+                .Take(pagination.PageSize);
+            var contractmods = await paginatedQuery
+                .ProjectTo<ContractModificationViewModel>(_mapper.ConfigurationProvider)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return new ListViewModel<ContractModificationViewModel>
+            {
+                Pagination = new PaginationViewModel
+                {
+                    PageNumber = pagination.PageNumber,
+                    PageSize = pagination.PageSize,
+                    TotalRow = totalRow,
+                },
+                Data = contractmods
+            };
+        }
         public async Task<ContractModificationViewModel> GetContractModification(Guid id)
         {
             return await _contractModification.GetMany(ct => ct.Id == id)

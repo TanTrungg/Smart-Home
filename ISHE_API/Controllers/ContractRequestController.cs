@@ -1,4 +1,6 @@
 ﻿using ISHE_Data.Models.Internal;
+using ISHE_Data.Models.Requests.Filters;
+using ISHE_Data.Models.Requests.Get;
 using ISHE_Data.Models.Requests.Post;
 using ISHE_Data.Models.Requests.Put;
 using ISHE_Data.Models.Views;
@@ -18,6 +20,14 @@ namespace ISHE_API.Controllers
         public ContractRequestController(IContractModificationService modificationService)
         {
             _modificationService = modificationService;
+        }
+
+        [HttpGet]
+        [ProducesResponseType(typeof(ListViewModel<ContractModificationViewModel>), StatusCodes.Status200OK)]
+        [SwaggerOperation(Summary = "Get all contract modify.")]
+        public async Task<ActionResult<ListViewModel<ContractModificationViewModel>>> GetContractModifications([FromQuery] ContractModificationFilterModel filter, [FromQuery] PaginationRequestModel pagination)
+        {
+            return await _modificationService.GetContractModifications(filter, pagination);
         }
 
         [HttpGet]
