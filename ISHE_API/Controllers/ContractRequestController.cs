@@ -1,10 +1,12 @@
-﻿using ISHE_Data.Models.Internal;
+﻿using ISHE_API.Configurations.Middleware;
+using ISHE_Data.Models.Internal;
 using ISHE_Data.Models.Requests.Filters;
 using ISHE_Data.Models.Requests.Get;
 using ISHE_Data.Models.Requests.Post;
 using ISHE_Data.Models.Requests.Put;
 using ISHE_Data.Models.Views;
 using ISHE_Service.Interfaces;
+using ISHE_Utility.Constants;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
@@ -41,13 +43,14 @@ namespace ISHE_API.Controllers
         }
 
         [HttpPost]
+        //  [Authorize(AccountRole.Customer)]
         [ProducesResponseType(typeof(ContractModificationViewModel), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Create contract modify.")]
-        public async Task<ActionResult<ContractModificationViewModel>> CreateSurvey([FromBody][Required] CreateContractModificationModel model)
+        public async Task<ActionResult<ContractModificationViewModel>> CreateContractModification([FromBody][Required] CreateContractModificationModel model)
         {
-            var survey = await _modificationService.CreateContractModification(model);
-            return CreatedAtAction(nameof(GetContractModification), new { id = survey.Id }, survey);
+            var mod = await _modificationService.CreateContractModification(model);
+            return CreatedAtAction(nameof(GetContractModification), new { id = mod.Id }, mod);
         }
 
         [HttpPut]
@@ -56,10 +59,10 @@ namespace ISHE_API.Controllers
         [ProducesResponseType(typeof(ContractModificationViewModel), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ErrorModel), StatusCodes.Status400BadRequest)]
         [SwaggerOperation(Summary = "Update contract modify.")]
-        public async Task<ActionResult<ContractModificationViewModel>> UpdateSurvey([FromRoute] Guid id, [FromBody] UpdateContractModificationModel model)
+        public async Task<ActionResult<ContractModificationViewModel>> UpdateContractModification([FromRoute] Guid id, [FromBody] UpdateContractModificationModel model)
         {
-            var survey = await _modificationService.UpdateContractModification(id, model);
-            return CreatedAtAction(nameof(GetContractModification), new { id = survey.Id }, survey);
+            var mod = await _modificationService.UpdateContractModification(id, model);
+            return CreatedAtAction(nameof(GetContractModification), new { id = mod.Id }, mod);
         }
     }
 }

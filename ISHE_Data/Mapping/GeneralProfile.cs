@@ -97,7 +97,10 @@ namespace ISHE_Data.Mapping
                     Link = notification.Link,
                     Type = notification.Type
                 }));
-            CreateMap<ContractModificationRequest, ContractModificationViewModel>();
+            CreateMap<ContractModificationRequest, ContractModificationViewModel>()
+                //.ForMember(dest => dest.Customer, otp => otp.MapFrom(src => src.Contract.Customer));
+                .ForMember(dest => dest.CustomerId, otp => otp.MapFrom(src => src.Contract.CustomerId));
+
             CreateMap<DevicePackage, PatialDevicePackageViewModel>()
                 .ForMember(dest => dest.Images, otp => otp.MapFrom(src => src.Images.FirstOrDefault()!.Url));
         }
