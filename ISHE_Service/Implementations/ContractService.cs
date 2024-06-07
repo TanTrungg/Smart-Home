@@ -386,58 +386,57 @@ namespace ISHE_Service.Implementations
                                                             .ToListAsync();
                 _contractDetail.RemoveRange(existingDevice);
             }
-            var uniqueIds = new HashSet<Guid>();
+
+            // Dictionary to track the quantities of each smart device in the contract details
+            var deviceQuantities = new Dictionary<Guid, ContractDetail>();
 
             foreach (var devicePackageId in devicePackageIds)
             {
-                if (uniqueIds.Add(devicePackageId))
-                {
-                    var package = await _devicePackage.GetMany(pac => pac.Id.Equals(devicePackageId))
+                var package = await _devicePackage.GetMany(pac => pac.Id.Equals(devicePackageId))
                     .Include(pac => pac.Promotions)
                     .Include(pac => pac.SmartDevicePackages)
                         .ThenInclude(smart => smart.SmartDevice)
                     .FirstOrDefaultAsync() ?? throw new NotFoundException($"Không tìm thấy device package với id: {devicePackageId}");
 
-                    if(package.Status == DevicePackageStatus.InActive.ToString())
+                if (package.Status == DevicePackageStatus.InActive.ToString())
+                {
+                    throw new BadRequestException("Device package không còn hỗ trợ trên hệ thống");
+                }
+
+                int packageAmount = package.Price;
+                //totalAmount += package.Price;
+
+                var totalDiscount = package.Promotions != null && package.Promotions.Any()
+                                    ? package.Promotions
+                                                .Where(p => p.Status == PromotionStatus.Active.ToString())
+                                                .Sum(p => p.DiscountAmount)
+                                    : null;
+
+                if (totalDiscount.HasValue)
+                {
+                    packageAmount -= packageAmount * totalDiscount.Value / 100;
+                }
+                totalAmount += packageAmount; 
+                totalDayToCompleted += package.CompletionTime;
+
+                var devicePackageUsage = new DevicePackageUsage
+                {
+                    Id = Guid.NewGuid(),
+                    ContractId = contractId,
+                    DevicePackageId = devicePackageId,
+                    DiscountAmount = totalDiscount,
+                    Price = package.Price,
+                    WarrantyDuration = package.WarrantyDuration
+                };
+                _devicePackageUsage.Add(devicePackageUsage);
+
+                foreach (var device in package.SmartDevicePackages)
+                {
+                    if (deviceQuantities.ContainsKey(device.SmartDeviceId))
                     {
-                        throw new BadRequestException("Device package không còn hỗ trợ trên hệ thống");
+                        deviceQuantities[device.SmartDeviceId].Quantity += device.SmartDeviceQuantity;
                     }
-
-                    totalAmount += package.Price;
-
-                    //var discountAmount = package.Promot
-                    //if (discountAmount.HasValue)
-                    //{
-                    //    totalAmount -= totalAmount * discountAmount.Value / 100;
-                    //}
-                    //var totalPackagePrice = (int)contract.DevicePackageUsages.Sum(usage => usage.DiscountAmount.HasValue ? usage.Price * (100 - usage.DiscountAmount) / 100 : usage.Price)!;
-
-                    var totalDiscount = package.Promotions != null && package.Promotions.Any()
-                                        ? package.Promotions
-                                                    .Where(p => p.Status == PromotionStatus.Active.ToString())
-                                                    .Sum(p => p.DiscountAmount)
-                                        : null;
-
-                    if (totalDiscount.HasValue)
-                    {
-                        totalAmount -= totalAmount * totalDiscount.Value / 100;
-                    }
-
-                    totalDayToCompleted += package.CompletionTime;
-
-                    var devicePackageUsage = new DevicePackageUsage
-                    {
-                        Id = Guid.NewGuid(),
-                        ContractId = contractId,
-                        DevicePackageId = devicePackageId,
-                        DiscountAmount = totalDiscount,
-                        Price = package.Price,
-                        WarrantyDuration = package.WarrantyDuration
-                    };
-                    _devicePackageUsage.Add(devicePackageUsage);
-
-
-                    foreach (var device in package.SmartDevicePackages)
+                    else
                     {
                         var detail = new ContractDetail
                         {
@@ -450,14 +449,20 @@ namespace ISHE_Service.Implementations
                             Quantity = device.SmartDeviceQuantity,
                             IsInstallation = true
                         };
-                        _contractDetail.Add(detail);
+                        deviceQuantities.Add(device.SmartDeviceId, detail);
                     }
                 }
-                
+            }
+
+            // Add all the aggregated contract details to the database context
+            foreach (var detail in deviceQuantities.Values)
+            {
+                _contractDetail.Add(detail);
             }
 
             return (totalAmount, totalDayToCompleted);
         }
+
 
         private void UpdateContractStatus(Contract contract, string newStatus)
         {
