@@ -18,6 +18,7 @@ using ISHE_Utility.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.Ocsp;
 using static ISHE_Utility.Helpers.FormatDate.FormatDate;
 
 namespace ISHE_Service.Implementations
@@ -31,6 +32,8 @@ namespace ISHE_Service.Implementations
         private readonly ISmartDeviceRepository _smartDevice;
         private readonly IDevicePackageRepository _devicePackage;
         private readonly IStaffAccountRepository _staffAccount;
+        private readonly ICustomerAccountRepository _customerAccount;
+
         private readonly ISurveyRequestRepository _surveyRequest;
         private readonly ISurveyRepository _survey;
         private readonly ICloudStorageService _cloudStorageService;
@@ -40,8 +43,9 @@ namespace ISHE_Service.Implementations
         private readonly INotificationService _notificationService;
         private readonly IPaymentService _paymentService;
         private readonly AppSetting _appSetting;
+        private readonly ISendMailService _sendMailService;
 
-        public ContractService(IUnitOfWork unitOfWork, IMapper mapper, IPaymentService paymentService, ICloudStorageService cloudStorageService, IOptions<AppSetting> appSettings, INotificationService notificationService) : base(unitOfWork, mapper)
+        public ContractService(IUnitOfWork unitOfWork, IMapper mapper, IPaymentService paymentService, ICloudStorageService cloudStorageService, IOptions<AppSetting> appSettings, INotificationService notificationService, ISendMailService sendMailService) : base(unitOfWork, mapper)
         {
             _contract = unitOfWork.Contract;
             _contractDetail = unitOfWork.ContractDetail;
@@ -54,11 +58,12 @@ namespace ISHE_Service.Implementations
             _survey = unitOfWork.Survey;
             _acceptance = unitOfWork.Acceptance;
             _teller = unitOfWork.TellerAccount;
-
+            _customerAccount = unitOfWork.CustomerAccount;
             _paymentService = paymentService;
             _cloudStorageService = cloudStorageService;
             _appSetting = appSettings.Value;
             _notificationService = notificationService;
+            _sendMailService = sendMailService;
         }
 
 
@@ -193,14 +198,10 @@ namespace ISHE_Service.Implementations
                 .Where(detail => detail.Type.Equals(ContractDetailType.Purchase))
                 .Sum(detail => (detail.Price + detail.InstallationPrice) * detail.Quantity);
 
-            if (model.StaffId.HasValue)
+            if (model.StaffId.HasValue && model.StaffId.Value != contract.StaffId)
             {
-                if(model.StaffId.Value != contract.StaffId)
-                {
-                    await CheckStaff(model.StaffId.Value, contract.StartPlanDate, contract.EndPlanDate);
-                    contract.StaffId = model.StaffId.Value;
-                }
-                
+                await CheckStaff(model.StaffId.Value, contract.StartPlanDate, contract.EndPlanDate);
+                contract.StaffId = model.StaffId.Value;   
             }
 
             if (model.ContractDetails != null && model.ContractDetails.Count > 0)
@@ -563,8 +564,12 @@ namespace ISHE_Service.Implementations
                 }
             };
 
-            
             await _notificationService.SendNotification(new List<Guid> { staffId }, message);
+            var email = await _staffAccount.GetMany(s => s.AccountId == staffId).Select(e => e.Email).FirstOrDefaultAsync();
+            if(email != null)
+            {
+                await _sendMailService.SendEmail(email, message.Title, message.Body);
+            }
         }
 
         private async Task SendNotificationToCustomer(string contractId, Guid customerId)
@@ -583,6 +588,12 @@ namespace ISHE_Service.Implementations
 
 
             await _notificationService.SendNotification(new List<Guid> { customerId }, message);
+
+            var email = await _customerAccount.GetMany(s => s.AccountId == customerId).Select(e => e.Email).FirstOrDefaultAsync();
+            if (email != null)
+            {
+                await _sendMailService.SendEmail(email, message.Title, message.Body);
+            }
         }
     }
 }

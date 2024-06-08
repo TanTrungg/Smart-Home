@@ -31,6 +31,7 @@ namespace ISHE_API.Configurations
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IDeviceTokenService, DeviceTokenService>();
             services.AddScoped<IContractModificationService, ContractModificationService>();
+            services.AddScoped<ISendMailService, SendMailService>();
 
             services.AddScoped<IPaymentService, PaymentService>();
 

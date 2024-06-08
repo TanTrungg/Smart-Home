@@ -22,15 +22,19 @@ namespace ISHE_Service.Implementations
         private readonly ISurveyRequestRepository _surveyRequestRepository;
         private readonly IStaffAccountRepository _staffAccountRepository;
         private readonly ITellerAccountRepository _tellerAccountRepository;
+        private readonly ICustomerAccountRepository _customerAccount;
+
+        private readonly ISendMailService _sendMailService;
 
         private readonly INotificationService _notificationService;
-        public SurveyRequestService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService) : base(unitOfWork, mapper)
+        public SurveyRequestService(IUnitOfWork unitOfWork, IMapper mapper, INotificationService notificationService, ISendMailService sendMailService) : base(unitOfWork, mapper)
         {
             _surveyRequestRepository = unitOfWork.SurveyRequest;
             _staffAccountRepository = unitOfWork.StaffAccount;
             _tellerAccountRepository = unitOfWork.TellerAccount;
-
+            _customerAccount = unitOfWork.CustomerAccount;
             _notificationService = notificationService;
+            _sendMailService = sendMailService;
         }
 
         public async Task<ListViewModel<SurveyRequestViewModel>> GetSurveyRequests(SurveyRequestFilterModel filter, PaginationRequestModel pagination)
@@ -244,6 +248,8 @@ namespace ISHE_Service.Implementations
             };
             
             await _notificationService.SendNotification(new List<Guid> { (Guid)request.StaffId! }, message);
+
+            await _sendMailService.SendEmail(request.Staff!.Email!, message.Title, message.Body);
         }
 
         private async Task SendNotificationToCustomer(SurveyRequest request)
@@ -261,7 +267,13 @@ namespace ISHE_Service.Implementations
                 }
             };
 
-            await _notificationService.SendNotification(new List<Guid> { (Guid)request.StaffId! }, message);
+            await _notificationService.SendNotification(new List<Guid> { (Guid)request.CustomerId! }, message);
+
+            var email = await _customerAccount.GetMany(s => s.AccountId == request.CustomerId).Select(e => e.Email).FirstOrDefaultAsync();
+            if (email != null)
+            {
+                await _sendMailService.SendEmail(email, message.Title, message.Body);
+            }
         }
     }
 }
