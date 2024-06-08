@@ -195,8 +195,12 @@ namespace ISHE_Service.Implementations
 
             if (model.StaffId.HasValue)
             {
-                await CheckStaff(model.StaffId.Value, contract.StartPlanDate, contract.EndPlanDate);
-                contract.StaffId = model.StaffId.Value;
+                if(model.StaffId.Value != contract.StaffId)
+                {
+                    await CheckStaff(model.StaffId.Value, contract.StartPlanDate, contract.EndPlanDate);
+                    contract.StaffId = model.StaffId.Value;
+                }
+                
             }
 
             if (model.ContractDetails != null && model.ContractDetails.Count > 0)
@@ -279,7 +283,7 @@ namespace ISHE_Service.Implementations
 
             var overlappingContracts = await _contract.GetMany(c => c.StaffId == staffId &&
                                                     c.StartPlanDate.Date <= endDate.Date && c.EndPlanDate.Date >= startDate.Date
-                                                    && (c.Status !=ContractStatus.Completed.ToString() && c.Status != ContractStatus.Cancelled.ToString()))
+                                                    && (c.Status != ContractStatus.Completed.ToString() && c.Status != ContractStatus.Cancelled.ToString()))
                                                         .ToListAsync();
             if (overlappingContracts.Any())
             {
