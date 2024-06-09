@@ -188,6 +188,7 @@ namespace ISHE_Service.Implementations
                         {
                             package.Price += smartDevice.Price;
                         }
+                        package.Status = package.Price > 0 ? DevicePackageStatus.Active.ToString() : DevicePackageStatus.InActive.ToString();
                     }
                     _devicePackageRepository.UpdateRange(packages);
 

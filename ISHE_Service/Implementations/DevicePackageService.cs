@@ -158,7 +158,7 @@ namespace ISHE_Service.Implementations
                         CompletionTime = model.CompletionTime,
                         Description = model.Description,
                         Price = totalPrice,
-                        Status = DevicePackageStatus.Active.ToString(),
+                        Status = totalPrice > 0 ? DevicePackageStatus.Active.ToString() : DevicePackageStatus.InActive.ToString(),
                     };
 
                     _packageRepository.Add(devicePackage);
